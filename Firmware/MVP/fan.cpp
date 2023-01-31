@@ -4,6 +4,7 @@
 #include "libcm.h"
 
 char goalSpeed[NUM_FAN_CONTROLLERS] = {'0'}; //store desired fan speeds (for OEM and PCB fans)
+static char actualSpeed[NUM_FAN_CONTROLLERS] = {'0'};
 
 uint8_t fanStates[NUM_FAN_CONTROLLERS] = {FAN_NOT_REQUESTED}; //each subsystem's fan speed request is stored in 2 bits
 
@@ -14,9 +15,8 @@ uint8_t fanStates[NUM_FAN_CONTROLLERS] = {FAN_NOT_REQUESTED}; //each subsystem's
 //prevents rapid fan speed changes //Each fan (OEM and PCB) has its own controller
 void fanSpeedController(uint8_t whichFan)
 {
-	static char actualSpeed[NUM_FAN_CONTROLLERS] = {'0'};
 	static uint32_t timestamp_latestFanSpeedChange_ms[NUM_FAN_CONTROLLERS] = {0};
-	
+
 	if(actualSpeed[whichFan] != goalSpeed[whichFan])
 	{
 		uint8_t changeFanSpeedNow = NO;
@@ -90,6 +90,12 @@ void fan_requestSpeed(uint8_t whichFan, uint8_t requestor, char newFanSpeed)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+char fan_getCurrentSpeed(uint8_t whichFan) {
+	return actualSpeed[whichFan];
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
 int8_t calculateAbsoluteDelta(int8_t temperatureA, int8_t temperatureB)
 {
 	int8_t absoluteDelta = 0;
@@ -131,15 +137,15 @@ void fan_handler(void)
 	// 		if(fanSpeed == FAN_SPEED_HI) { fanSpeedSet(FAN_SPEED_LOW); }
 	// 		if(fanSpeed == FAN_SPEED_LO) { fanSpeedSet(FAN_SPEED_OFF); }
 
-	// 	} 
+	// 	}
 	// }
-	
+
 	int8_t battTemp   = temperature_battery_getLatest();
 	int8_t intakeTemp = temperature_intake_getLatest();
 
 	static int8_t   battTemp_lastFanStateUpdate = ROOM_TEMP_DEGC;
 	static int8_t intakeTemp_lastFanStateUpdate = ROOM_TEMP_DEGC;
-	
+
 	int8_t deltaAbs_battTemp   = calculateAbsoluteDelta(battTemp,     battTemp_lastFanStateUpdate);
 	int8_t deltaAbs_intakeTemp = calculateAbsoluteDelta(intakeTemp, intakeTemp_lastFanStateUpdate);
 
@@ -163,7 +169,7 @@ void fan_handler(void)
 		if(battTemp > ROOM_TEMP_DEGC)
 		{
 			int8_t coolBatteryAboveTemp_C = fan_getBatteryCoolSetpoint_C();
-			
+
 			if(battTemp >= (temperature_intake_getLatest() + AIR_TEMP_DELTA_TO_RUN_FANS) )
 			{
 				//battery is warmer than intake air

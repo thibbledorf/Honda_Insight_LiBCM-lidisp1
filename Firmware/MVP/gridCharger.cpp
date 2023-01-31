@@ -7,6 +7,7 @@
 //updated by gridCharger_handler() //prevents mid-loop state changes from affecting loop logic
 //no need to retrieve this value outside this file... use gpio_isGridChargerPluggedInNow() instead
 bool gridChargerState_sampled = PLUGGED_IN;
+static uint8_t cellState = CELLSTATE_UNINITIALIZED;
 
 //JTS2doLater: Prevent grid charging when cells below freezing
 
@@ -34,6 +35,7 @@ void gridCharger_handleUnplugEvent(void)
   Serial.print(F("Unplugged"));
   gpio_turnGridCharger_off();
   lcd_displayOFF();
+  LiDisplay_gridChargerUnplugged();
   gpio_setGridCharger_powerLevel('H'); //reduces power consumption
   gpio_turnBuzzer_off(); //if issues persist, something else will turn buzzer back on
 }
@@ -44,16 +46,17 @@ void gridCharger_handlePluginEvent(void)
 {
   Serial.print(F("Plugged In"));
   lcd_displayOn();
+  LiDisplay_gridChargerPluggedIn();
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 
 void gridCharger_chargePack(void)
 {
-  static uint8_t cellState = CELLSTATE_UNINITIALIZED;
   static uint8_t cellStatePrevious = CELLSTATE_UNINITIALIZED;
 
   lcd_refresh();
+  LiDisplay_refresh();
 
   if( LTC68042result_hiCellVoltage_get() > CELL_VREST_85_PERCENT_SoC )
   {

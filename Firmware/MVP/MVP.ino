@@ -4,7 +4,7 @@
 
 #include "libcm.h"
 
-void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay 
+void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup or bootloader delay
 {
 	gpio_begin();
 	wdt_disable();
@@ -20,7 +20,7 @@ void setup() //~t=2 milliseconds, BUT NOTE this doesn't include CPU_CLOCK warmup
 	#endif
 
 	if(gpio_keyStateNow() == KEYSTATE_ON){ LED(3,ON); } //turn LED3 on if LiBCM (re)boots while keyON (e.g. while driving)
-	
+
 	gpio_safetyCoverCheck(); //this function hangs forever if safety cover isn't installed
 	wdt_enable(WDTO_2S); //set watchdog reset vector to 2 seconds
 	EEPROM_verifyDataValid();
@@ -48,16 +48,22 @@ void loop()
 		vPackSpoof_setVoltage();
 		debugUSB_printLatestData();
 		lcd_refresh();
+
+		LiDisplay_refresh();
 	}
 	else if( key_getSampledState() == KEYSTATE_OFF )
-	{	
+	{
 		if( time_toUpdate_keyOffValues() == true )
-		{ 
-			LTC68042cell_sampleGatherAndProcessAllCellVoltages();			
+		{
+			LTC68042cell_sampleGatherAndProcessAllCellVoltages();
 			SoC_updateUsingLatestOpenCircuitVoltage();
 			SoC_turnOffLiBCM_ifPackEmpty();
-			cellBalance_handler();			
+			cellBalance_handler();
 			debugUSB_printLatest_data_gridCharger();
+		}
+
+		if(digitalRead(PIN_HMI_EN) == 1) {
+			LiDisplay_refresh();
 		}
 
 		gridCharger_handler();
